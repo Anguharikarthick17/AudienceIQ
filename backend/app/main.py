@@ -18,7 +18,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from app.config import CORS_ORIGINS
-from app.routers import analyze, dashboard, health, model_info, recommend, segments, train, upload
+from app.routers import advanced_intelligence, analyze, dashboard, health, model_info, recommend, segments, train, upload
 from app.state import app_state
 
 # ---------------------------------------------------------------------------
@@ -94,6 +94,7 @@ app.include_router(analyze.router)
 app.include_router(dashboard.router)
 app.include_router(segments.router)
 app.include_router(model_info.router)
+app.include_router(advanced_intelligence.router)
 
 
 # ---------------------------------------------------------------------------

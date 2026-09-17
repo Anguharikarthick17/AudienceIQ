@@ -254,6 +254,152 @@ export interface ModelInfoResponse {
   artifact_exists: boolean
 }
 
+// ---- Advanced Intelligence Lab Types --------------------------------------
+
+export interface ProfileInput {
+  watch_time_hours: number
+  avg_session_mins: number
+  top_genres: string[]
+  sessions_per_week?: number
+  completion_rate?: number
+  days_since_last_watch?: number
+  weekend_activity_ratio?: number
+}
+
+export interface FeatureDelta {
+  feature_name: string
+  display_name: string
+  original_value: number
+  counterfactual_value: number
+  delta: number
+  pull_towards_target_centroid: number
+}
+
+export interface SegmentTransition {
+  source_segment_id: number
+  source_segment_name: string
+  target_segment_id: number
+  target_segment_name: string
+  changed: boolean
+}
+
+export interface ProfileResult {
+  segment_id: number
+  segment_name: string
+  distance_to_centroid: number
+  all_distances: Record<number, number>
+  feature_summary: Record<string, number>
+}
+
+export interface CounterfactualResponse {
+  classification: string
+  original: ProfileResult
+  counterfactual: ProfileResult
+  changed_features: FeatureDelta[]
+  segment_transition: SegmentTransition
+  explanation: string
+  disclaimer: string
+}
+
+export interface ContradictionItem {
+  rule_id: string
+  title: string
+  affected_features: string[]
+  observed_values: Record<string, unknown>
+  expected_relationship: string
+  explanation: string
+  severity: 'LOW' | 'MEDIUM' | 'HIGH'
+}
+
+export interface ContradictionResponse {
+  contradictions_detected: boolean
+  total_contradictions: number
+  items: ContradictionItem[]
+  mode: string
+  label: string
+  data_classification: string
+  disclaimer: string
+}
+
+export interface MigrationPathway {
+  source_segment_id: number
+  source_segment_name: string
+  target_segment_id: number
+  target_segment_name: string
+  transition_type: string
+  simulated_users_count: number
+  simulated_transition_rate: number
+  feature_shifts: Record<string, number>
+  original_distance: number
+  new_distance: number
+  explanation: string
+}
+
+export interface MigrationCohort {
+  segment_id: number
+  segment_name: string
+  user_count: number
+  audience_pct: number
+  avg_watch_time: number
+  avg_session_mins: number
+  engagement_level: string
+}
+
+export interface MigrationResponse {
+  temporal_data_available: boolean
+  mode: string
+  data_limitation_notice: string
+  badge: string
+  cohorts: MigrationCohort[]
+  pathways: MigrationPathway[]
+}
+
+export interface GenreGapMetric {
+  genre: string
+  audience_demand_count: number
+  audience_demand_share_pct: number
+  catalog_count: number
+  catalog_share_pct: number
+  demand_coverage_gap_pct: number
+  gap_status: 'DEFICIT' | 'BALANCED' | 'SURPLUS'
+  is_critical_gap: boolean
+  sample_titles: string[]
+}
+
+export interface ContentGapsResponse {
+  total_viewers_analyzed: number
+  total_catalog_titles: number
+  exposure_measured: boolean
+  data_honesty_statement: string
+  classification_map: Record<string, string>
+  genre_gaps: GenreGapMetric[]
+  top_gap_genres: string[]
+  why_this_gap_matters: string
+}
+
+export interface ScoredRecommendation {
+  title: string
+  genre: string
+  status: 'RECOMMENDED' | 'NOT_PRIORITIZED'
+  score: number
+  rating_stars: number
+  segment_compatibility: number
+  genre_compatibility: number
+  behavior_compatibility: number
+  reasons: string[]
+}
+
+export interface ExplainRecommendationResponse {
+  user_id: string
+  segment_id: number
+  segment_name: string
+  confidence: string
+  distance_to_centroid: number
+  recommended_items: ScoredRecommendation[]
+  not_prioritized_items: ScoredRecommendation[]
+  scoring_framework: Record<string, unknown>
+}
+
 // ---- API Methods ----------------------------------------------------------
 
 export const api = {
@@ -329,4 +475,28 @@ export const api = {
   }) => request<RecommendResponse>('/recommend', { method: 'POST', body: JSON.stringify(payload) }),
 
   getModelInfo: () => request<ModelInfoResponse>('/model-info'),
+
+  // Advanced Intelligence Features:
+  simulateCounterfactual: (payload: {
+    original_profile: ProfileInput
+    counterfactual_profile: ProfileInput
+  }) => request<CounterfactualResponse>('/counterfactual', { method: 'POST', body: JSON.stringify(payload) }),
+
+  detectContradictions: (payload: {
+    profile: ProfileInput
+    baseline_profile?: ProfileInput
+  }) => request<ContradictionResponse>('/contradictions', { method: 'POST', body: JSON.stringify(payload) }),
+
+  getMigration: () => request<MigrationResponse>('/migration'),
+
+  getContentGaps: () => request<ContentGapsResponse>('/content-gaps'),
+
+  explainRecommendations: (payload: {
+    user_id: string
+    watch_time_hours: number
+    avg_session_mins: number
+    top_genres: string[]
+    sessions_per_week?: number
+    completion_rate?: number
+  }) => request<ExplainRecommendationResponse>('/recommend/explain', { method: 'POST', body: JSON.stringify(payload) }),
 }

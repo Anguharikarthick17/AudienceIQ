@@ -101,6 +101,71 @@ Full segment profiles with behavioral characteristics.
 
 ---
 
+## Five Advanced Intelligence Features (Team Liquid)
+
+AudienceIQ features five differentiating advanced intelligence capabilities integrated into the platform, designed around the **Black × Yellow × Liquid Glass** design system and strictly reusing the existing persisted ML pipeline without retraining.
+
+### 1. Counterfactual Lab (`POST /counterfactual`)
+- **Purpose**: Interactive sensitivity analysis allowing operators to ask: *"What would happen to this audience profile if their behavior changed?"*
+- **Inputs**: Baseline profile vs What-If counterfactual profile (watch time, session duration, sessions per week, completion rate, days since last watch, weekend activity ratio, audited genres).
+- **Processing**: Both feature vectors pass through the exact same persisted `StandardScaler` + `KMeans` pipeline via `model_service.py`. Features are evaluated in the scaled feature space to quantify pull towards the counterfactual cluster centroid.
+- **Outputs**:
+  - Original vs Counterfactual segment assignments and centroid distances
+  - Changed features comparison (`32h → 58h`, etc.)
+  - Segment transition indicator (e.g. *Genre Explorers* → *High-Engagement Genre Explorers*)
+  - Explicit mathematical attribution breakdown
+  - Non-negotiable label: `COUNTERFACTUAL SIMULATION — NOT CAUSAL INFERENCE`
+- **Data Classification**: `SIMULATED / COUNTERFACTUAL`
+
+### 2. Audience Contradiction Detector (`POST /contradictions`)
+- **Purpose**: Detects behavioral telemetry patterns that are internally inconsistent or departed from empirical OTT distribution patterns.
+- **Inputs**: User telemetry profile or comparison between baseline and modified profile.
+- **Processing**: Evaluates deterministic mathematical consistency rules derived from the 2,000-user distribution:
+  - High watch time intensity (>70h) paired with micro-sessions (≤25m)
+  - Substantial volume (>50h) with near-zero completion (≤15%)
+  - Long session duration (≥90m) mathematically conflicting with low monthly watch time (≤8h)
+  - High weekly frequency (≥7/wk) with prolonged inactivity (≥25 days)
+  - High genre diversity (6+ genres) with insufficient consumption depth (≤5h)
+- **Outputs**: Contradiction flag, affected features, observed telemetry, expected mathematical relationships, deterministic severity (`LOW`, `MEDIUM`, `HIGH`).
+- **Data Classification**: `OBSERVED` (for static profiles), labeled as `Rule-based behavioral inconsistency indicator`. When in comparison mode: `Profile comparison — not historical behavior.`
+
+### 3. Audience Migration Map (`GET /migration`)
+- **Purpose**: Models viewer cohort mobility and engagement transition vectors between discovered audience segments.
+- **Data Limitation Audit**: Inspection of `data/dataset.csv` confirmed the **complete absence of temporal timestamps, viewing dates, session logs, or longitudinal records**.
+- **Automated Fallback**: Automatically activates **COUNTERFACTUAL AUDIENCE MIGRATION**. Does **not** fabricate temporal history.
+- **Processing**: Calculates deterministic centroid boundary vectors between Cluster 0 (*High-Engagement Genre Explorers*) and Cluster 1 (*Genre Explorers*), evaluating required feature shifts and simulation transition rates.
+- **Outputs**:
+  - Interactive node-and-flow visualization with animated flow lines
+  - Transition pathways (Escalation vs Decay)
+  - Required feature deltas ($\Delta$ watch time, $\Delta$ session duration, $\Delta$ completion rate)
+  - Prominent mandatory badge: `SIMULATED TRANSITION — NOT HISTORICAL MIGRATION`
+- **Data Classification**: `SIMULATED / COUNTERFACTUAL`
+
+### 4. Content–Audience Mismatch Detector / Content Gaps (`GET /content-gaps`)
+- **Purpose**: Evaluates platform audience demand against catalog coverage to detect genre supply deficits.
+- **Inputs**: Audited audience genre preferences from `data/dataset.csv` (2,000 users) vs available platform catalog titles across 19 genres (`_GENRE_RECS`).
+- **Data Limitation Audit**: The dataset contains observed genre affinities but **no content exposure or impression telemetry**.
+- **Data Honesty Declaration**: Explicitly discloses: *"Observed audience preference is compared with available catalog coverage; exposure is not measured in the supplied dataset."*
+- **Processing**: Computes relative Audience Demand Share % vs Catalog Share %, calculating the Demand Coverage Gap %.
+- **Outputs**:
+  - Demand vs Catalog comparative visual bars
+  - Critical gap indicator for genres with >3% supply deficit (e.g. Action, Comedy)
+  - "Why This Gap Matters" analytical panel grounded in observed numbers
+- **Data Classification**: Audience Demand = `OBSERVED`, Catalog Coverage = `OBSERVED`, Coverage Gap = `INFERRED`, User Exposure = `Not available in supplied dataset.`
+
+### 5. Why-Not Recommendation Engine (`POST /recommend/explain`)
+- **Purpose**: Fully explainable content ranking engine that provides dual rationales: why candidate items are prioritized and why alternative titles are deprioritized.
+- **Inputs**: User ID, watch time, session duration, preferred genres.
+- **Processing**: Deterministic scoring matrix combining Genre Compatibility (40%), Cohort Affinity (30%), and Behavioral Session Format (30%). Zero LLM, zero external black-box.
+- **Outputs**:
+  - **RECOMMENDED (★★★★★)**: Candidates scoring ≥65 with explicit checklist (`✓ Matches primary genre`, `✓ Dominant in cohort`, `✓ Formatted for session depth`)
+  - **NOT PRIORITIZED (★★☆☆☆)**: Lower-scoring alternatives with explicit reasons (`○ Weaker genre alignment`, `○ Lower cohort affinity`, `○ Format mismatch`)
+  - Transparent score breakdown (0–100) and star ratings
+- **Data Classification**: `OBSERVED` / `INFERRED`
+
+
+---
+
 ## ML Pipeline
 
 1. **Inspect** → heuristic column detection (no fixed schema)

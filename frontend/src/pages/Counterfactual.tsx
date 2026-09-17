@@ -1,354 +1,545 @@
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import {
-  Sparkles, ArrowRight, RefreshCw, Sliders, Target, Shield, HelpCircle, Loader2, CheckCircle2
+  Sparkles,
+  ArrowRight,
+  RefreshCw,
+  Sliders,
+  Shield,
+  Loader2,
+  TrendingUp,
+  AlertTriangle,
 } from 'lucide-react'
-import { api, formatErrorMessage, type AnalyzeResponse } from '@/api/client'
+import { api, formatErrorMessage, type CounterfactualResponse } from '@/api/client'
 import TopBar from '@/components/layout/TopBar'
 import GlassCard from '@/components/common/GlassCard'
 import GlassButton from '@/components/common/GlassButton'
-import Floating3DCubes from '@/components/common/Floating3DCubes'
 
-const AVAILABLE_GENRES = [
-  'Action', 'Sci-Fi', 'Comedy', 'Drama', 'Thriller', 'Animation', 'Documentary', 'Romance'
+const AUDITED_GENRES = [
+  'Action', 'Comedy', 'Sci-Fi', 'Drama', 'Thriller',
+  'Animation', 'Documentary', 'Horror', 'Romance', 'Reality'
 ]
 
 export default function Counterfactual() {
-  // Baseline profile
-  const [watchTime, setWatchTime] = useState(30)
-  const [avgSession, setAvgSession] = useState(45)
-  const [sessionsPerWeek, setSessionsPerWeek] = useState(3)
-  const [completionRate, setCompletionRate] = useState(65)
-  const [selectedGenres, setSelectedGenres] = useState<string[]>(['Comedy', 'Drama'])
+  // Original (Baseline) Profile
+  const [origWatchTime, setOrigWatchTime] = useState(30)
+  const [origSession, setOrigSession] = useState(35)
+  const [origSessionsPerWeek, setOrigSessionsPerWeek] = useState(4)
+  const [origCompletionRate, setOrigCompletionRate] = useState(45)
+  const [origDaysSinceWatch, setOrigDaysSinceWatch] = useState(14)
+  const [origWeekendRatio, setOrigWeekendRatio] = useState(50)
+  const [origGenres, setOrigGenres] = useState<string[]>(['Comedy', 'Drama'])
+
+  // Counterfactual (What-If) Profile
+  const [cfWatchTime, setCfWatchTime] = useState(105)
+  const [cfSession, setCfSession] = useState(110)
+  const [cfSessionsPerWeek, setCfSessionsPerWeek] = useState(9)
+  const [cfCompletionRate, setCfCompletionRate] = useState(85)
+  const [cfDaysSinceWatch, setCfDaysSinceWatch] = useState(5)
+  const [cfWeekendRatio, setCfWeekendRatio] = useState(55)
+  const [cfGenres, setCfGenres] = useState<string[]>(['Action', 'Sci-Fi', 'Thriller'])
 
   const [loading, setLoading] = useState(false)
-  const [baselineResult, setBaselineResult] = useState<AnalyzeResponse | null>(null)
-  const [counterfactualResult, setCounterfactualResult] = useState<AnalyzeResponse | null>(null)
+  const [result, setResult] = useState<CounterfactualResponse | null>(null)
   const [error, setError] = useState<string | null>(null)
 
-  // Run initial baseline
+  // Run initial simulation on load
   useEffect(() => {
-    runInference(30, 45, 3, 65, ['Comedy', 'Drama'], true)
+    runSimulation()
   }, [])
 
-  const runInference = async (
-    wt: number,
-    session: number,
-    spw: number,
-    comp: number,
-    genres: string[],
-    isBaseline: boolean = false
-  ) => {
+  const runSimulation = async () => {
     setLoading(true)
     setError(null)
     try {
-      const res = await api.analyzeUser({
-        user_id: isBaseline ? 'BASELINE-SIM' : 'COUNTERFACTUAL-SIM',
-        watch_time_hours: wt,
-        avg_session_mins: session,
-        sessions_per_week: spw,
-        completion_rate: comp / 100,
-        top_genres: genres,
+      const res = await api.simulateCounterfactual({
+        original_profile: {
+          watch_time_hours: origWatchTime,
+          avg_session_mins: origSession,
+          top_genres: origGenres,
+          sessions_per_week: origSessionsPerWeek,
+          completion_rate: origCompletionRate / 100,
+          days_since_last_watch: origDaysSinceWatch,
+          weekend_activity_ratio: origWeekendRatio / 100,
+        },
+        counterfactual_profile: {
+          watch_time_hours: cfWatchTime,
+          avg_session_mins: cfSession,
+          top_genres: cfGenres,
+          sessions_per_week: cfSessionsPerWeek,
+          completion_rate: cfCompletionRate / 100,
+          days_since_last_watch: cfDaysSinceWatch,
+          weekend_activity_ratio: cfWeekendRatio / 100,
+        },
       })
-      if (isBaseline) {
-        setBaselineResult(res)
-        setCounterfactualResult(res)
-      } else {
-        setCounterfactualResult(res)
-      }
-    } catch (e: unknown) {
-      setError(formatErrorMessage(e, 'Simulation failed'))
+      setResult(res)
+    } catch (err: unknown) {
+      setError(formatErrorMessage(err, 'Counterfactual simulation failed'))
     } finally {
       setLoading(false)
     }
   }
 
-  const handleSimulate = () => {
-    runInference(watchTime, avgSession, sessionsPerWeek, completionRate, selectedGenres, false)
-  }
-
   const handleReset = () => {
-    setWatchTime(30)
-    setAvgSession(45)
-    setSessionsPerWeek(3)
-    setCompletionRate(65)
-    setSelectedGenres(['Comedy', 'Drama'])
-    runInference(30, 45, 3, 65, ['Comedy', 'Drama'], true)
+    setOrigWatchTime(30)
+    setOrigSession(35)
+    setOrigSessionsPerWeek(4)
+    setOrigCompletionRate(45)
+    setOrigDaysSinceWatch(14)
+    setOrigWeekendRatio(50)
+    setOrigGenres(['Comedy', 'Drama'])
+
+    setCfWatchTime(105)
+    setCfSession(110)
+    setCfSessionsPerWeek(9)
+    setCfCompletionRate(85)
+    setCfDaysSinceWatch(5)
+    setCfWeekendRatio(55)
+    setCfGenres(['Action', 'Sci-Fi', 'Thriller'])
   }
 
-  const toggleGenre = (genre: string) => {
-    setSelectedGenres(prev =>
-      prev.includes(genre)
-        ? (prev.length > 1 ? prev.filter(g => g !== genre) : prev)
-        : [...prev, genre]
-    )
+  const toggleGenre = (genre: string, isOriginal: boolean) => {
+    if (isOriginal) {
+      setOrigGenres(prev =>
+        prev.includes(genre)
+          ? (prev.length > 1 ? prev.filter(g => g !== genre) : prev)
+          : [...prev, genre]
+      )
+    } else {
+      setCfGenres(prev =>
+        prev.includes(genre)
+          ? (prev.length > 1 ? prev.filter(g => g !== genre) : prev)
+          : [...prev, genre]
+      )
+    }
   }
-
-  const isMigrated = baselineResult && counterfactualResult && baselineResult.segment_id !== counterfactualResult.segment_id
 
   return (
     <div className="flex-1 flex flex-col min-h-screen bg-black relative selection:bg-yellow-400 selection:text-black">
-      {/* Subtle ambient glow */}
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-5xl h-80 bg-yellow-ambient pointer-events-none" />
-
       <TopBar title="Counterfactual Lab" subtitle="Hypothetical Behavior Perturbation Engine" />
 
       <div className="flex-1 p-6 lg:p-10 space-y-8 max-w-7xl mx-auto w-full z-0">
         {/* Lab Header */}
-        <section className="relative rounded-[28px] overflow-hidden bg-gradient-to-br from-white/[0.05] via-white/[0.02] to-transparent 
-                            border border-white/[0.12] border-t-white/[0.22] p-8 lg:p-10 shadow-[0_20px_50px_rgba(0,0,0,0.8)]">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
-            <div className="lg:col-span-8 space-y-4">
+        <section className="relative rounded-[28px] overflow-hidden bg-gradient-to-br from-white/[0.05] via-white/[0.02] to-transparent border border-white/[0.12] p-8 lg:p-10 shadow-[0_20px_50px_rgba(0,0,0,0.8)]">
+          <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+            <div className="space-y-2">
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-yellow-400/10 border border-yellow-400/30 text-yellow-400 text-xs font-mono font-bold tracking-wider">
                 <Sparkles className="w-3.5 h-3.5" />
-                <span>WHAT-IF SCENARIO SIMULATOR</span>
+                <span>WHAT-IF SENSITIVITY LAB</span>
               </div>
-              <h1 className="text-3xl lg:text-4xl font-black text-white tracking-tight">
-                Simulate Viewer Shifts. <span className="text-yellow-400 drop-shadow-[0_0_20px_rgba(255,212,0,0.4)]">Discover Transitions.</span>
-              </h1>
-              <p className="text-sm text-slate-300 max-w-2xl leading-relaxed">
-                Perturb behavioral features (watch hours, session depth, frequency, genre affinities) in real time to observe whether a viewer migrates across quantitative KMeans decision boundaries.
+              <h1 className="text-3xl font-black text-white tracking-tight">Counterfactual Lab</h1>
+              <p className="text-sm text-slate-400 max-w-2xl leading-relaxed">
+                Perturb behavioral telemetry through the exact persisted KMeans pipeline to observe how hypothetical changes cross cluster boundaries.
               </p>
             </div>
-            <div className="lg:col-span-4 flex justify-center">
-              <Floating3DCubes size={220} />
+
+            <div className="flex items-center gap-3">
+              <div className="px-3.5 py-1.5 rounded-full bg-yellow-400/10 border border-yellow-400/40 text-yellow-400 text-[11px] font-mono font-bold uppercase tracking-wider flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-yellow-400 animate-pulse shadow-[0_0_8px_#FFD400]" />
+                <span>COUNTERFACTUAL SIMULATION</span>
+              </div>
+              <GlassButton variant="secondary" onClick={handleReset} className="text-xs">
+                <RefreshCw className="w-3.5 h-3.5 mr-1.5" />
+                Reset
+              </GlassButton>
             </div>
           </div>
         </section>
 
-        {/* Interactive Lab Studio */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-          {/* Controls Column */}
-          <div className="lg:col-span-5 space-y-5">
-            <GlassCard className="p-6 space-y-5">
-              <div className="flex items-center justify-between pb-3 border-b border-white/[0.08]">
-                <div className="flex items-center gap-2">
-                  <Sliders className="w-4 h-4 text-yellow-400" />
-                  <span className="text-xs font-bold font-mono uppercase tracking-wider text-white">
-                    Behavioral Perturbation Sliders
-                  </span>
+        {/* Dual Input Panels: ORIGINAL vs WHAT-IF */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* ORIGINAL PROFILE */}
+          <GlassCard className="p-6 lg:p-8 space-y-6">
+            <div className="flex items-center justify-between pb-4 border-b border-white/[0.08]">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-lg bg-zinc-800 border border-white/10 flex items-center justify-center text-zinc-300 font-mono font-bold text-xs">
+                  A
                 </div>
-                <button
-                  onClick={handleReset}
-                  className="text-[11px] font-mono text-slate-400 hover:text-yellow-400 flex items-center gap-1 transition-colors"
-                >
-                  <RefreshCw className="w-3 h-3" />
-                  <span>Reset</span>
-                </button>
+                <div>
+                  <h3 className="text-base font-bold text-white tracking-wide">ORIGINAL PROFILE</h3>
+                  <p className="text-[11px] font-mono text-slate-400">Baseline Observed Telemetry</p>
+                </div>
               </div>
+              <span className="px-2.5 py-1 rounded-full text-[10px] font-mono font-bold bg-white/[0.04] text-slate-300 border border-white/10">
+                BENCHMARK
+              </span>
+            </div>
 
-              {/* Slider 1: Watch Time */}
-              <div className="space-y-2">
-                <div className="flex justify-between text-xs font-mono">
+            <div className="space-y-4">
+              <div>
+                <div className="flex justify-between text-xs font-mono mb-1.5">
                   <span className="text-slate-300">Watch Time:</span>
-                  <span className="text-yellow-400 font-bold">{watchTime} hours</span>
+                  <span className="text-white font-bold">{origWatchTime} hours</span>
                 </div>
                 <input
                   type="range"
                   min="5"
-                  max="150"
-                  step="1"
-                  value={watchTime}
-                  onChange={e => setWatchTime(Number(e.target.value))}
-                  className="w-full accent-yellow-400 cursor-pointer"
+                  max="240"
+                  value={origWatchTime}
+                  onChange={e => setOrigWatchTime(Number(e.target.value))}
+                  className="w-full accent-zinc-400 cursor-pointer"
                 />
-                <div className="flex justify-between text-[10px] font-mono text-slate-500">
-                  <span>5h (Low)</span>
-                  <span>75h</span>
-                  <span>150h (Heavy)</span>
-                </div>
               </div>
 
-              {/* Slider 2: Avg Session */}
-              <div className="space-y-2">
-                <div className="flex justify-between text-xs font-mono">
+              <div>
+                <div className="flex justify-between text-xs font-mono mb-1.5">
                   <span className="text-slate-300">Avg Session Duration:</span>
-                  <span className="text-yellow-400 font-bold">{avgSession} mins</span>
+                  <span className="text-white font-bold">{origSession} mins</span>
                 </div>
                 <input
                   type="range"
-                  min="15"
-                  max="180"
-                  step="5"
-                  value={avgSession}
-                  onChange={e => setAvgSession(Number(e.target.value))}
-                  className="w-full accent-yellow-400 cursor-pointer"
-                />
-                <div className="flex justify-between text-[10px] font-mono text-slate-500">
-                  <span>15m (Bite-size)</span>
-                  <span>90m</span>
-                  <span>180m (Feature film)</span>
-                </div>
-              </div>
-
-              {/* Slider 3: Sessions / Week */}
-              <div className="space-y-2">
-                <div className="flex justify-between text-xs font-mono">
-                  <span className="text-slate-300">Sessions Per Week:</span>
-                  <span className="text-yellow-400 font-bold">{sessionsPerWeek} sessions</span>
-                </div>
-                <input
-                  type="range"
-                  min="1"
-                  max="14"
-                  step="0.5"
-                  value={sessionsPerWeek}
-                  onChange={e => setSessionsPerWeek(Number(e.target.value))}
-                  className="w-full accent-yellow-400 cursor-pointer"
+                  min="5"
+                  max="200"
+                  value={origSession}
+                  onChange={e => setOrigSession(Number(e.target.value))}
+                  className="w-full accent-zinc-400 cursor-pointer"
                 />
               </div>
 
-              {/* Slider 4: Completion Rate */}
-              <div className="space-y-2">
-                <div className="flex justify-between text-xs font-mono">
-                  <span className="text-slate-300">Content Completion Rate:</span>
-                  <span className="text-yellow-400 font-bold">{completionRate}%</span>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <div className="flex justify-between text-[11px] font-mono mb-1">
+                    <span className="text-slate-400">Sessions/Wk:</span>
+                    <span className="text-white font-bold">{origSessionsPerWeek}</span>
+                  </div>
+                  <input
+                    type="range"
+                    min="1"
+                    max="20"
+                    value={origSessionsPerWeek}
+                    onChange={e => setOrigSessionsPerWeek(Number(e.target.value))}
+                    className="w-full accent-zinc-400 cursor-pointer"
+                  />
                 </div>
-                <input
-                  type="range"
-                  min="10"
-                  max="100"
-                  step="5"
-                  value={completionRate}
-                  onChange={e => setCompletionRate(Number(e.target.value))}
-                  className="w-full accent-yellow-400 cursor-pointer"
-                />
+                <div>
+                  <div className="flex justify-between text-[11px] font-mono mb-1">
+                    <span className="text-slate-400">Completion:</span>
+                    <span className="text-white font-bold">{origCompletionRate}%</span>
+                  </div>
+                  <input
+                    type="range"
+                    min="5"
+                    max="100"
+                    value={origCompletionRate}
+                    onChange={e => setOrigCompletionRate(Number(e.target.value))}
+                    className="w-full accent-zinc-400 cursor-pointer"
+                  />
+                </div>
               </div>
 
-              {/* Genre Selection */}
-              <div className="space-y-2 pt-2 border-t border-white/[0.08]">
-                <label className="text-xs font-mono text-slate-300 block">
-                  Hypothetical Genre Affinities:
-                </label>
+              <div>
+                <p className="text-[11px] font-mono text-slate-400 uppercase tracking-wider mb-2 font-semibold">
+                  Audited Genres ({origGenres.length} selected):
+                </p>
                 <div className="flex flex-wrap gap-1.5">
-                  {AVAILABLE_GENRES.map(genre => {
-                    const isSelected = selectedGenres.includes(genre)
+                  {AUDITED_GENRES.map(g => {
+                    const active = origGenres.includes(g)
                     return (
                       <button
-                        key={genre}
-                        onClick={() => toggleGenre(genre)}
-                        className={`px-2.5 py-1 rounded-full text-xs font-mono transition-all ${
-                          isSelected
-                            ? 'bg-yellow-400 text-black font-bold border border-yellow-300 shadow-[0_0_10px_rgba(255,212,0,0.35)]'
-                            : 'bg-white/[0.04] text-slate-400 border border-white/10 hover:border-yellow-400/40 hover:text-white'
+                        key={g}
+                        onClick={() => toggleGenre(g, true)}
+                        className={`px-2.5 py-1 rounded-lg text-xs font-mono font-medium transition-all ${
+                          active
+                            ? 'bg-zinc-700 text-white border border-zinc-500 shadow-sm'
+                            : 'bg-white/[0.02] text-slate-400 border border-white/[0.05] hover:border-white/20'
                         }`}
                       >
-                        {genre}
+                        {g}
                       </button>
                     )
                   })}
                 </div>
               </div>
+            </div>
+          </GlassCard>
 
-              {/* Run Simulation Action */}
-              <div className="pt-3">
-                <GlassButton
-                  variant="primary"
-                  size="lg"
-                  onClick={handleSimulate}
-                  disabled={loading}
-                  className="w-full justify-center"
-                >
-                  {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
-                  <span>{loading ? 'Evaluating Model…' : 'Compute Counterfactual Shift →'}</span>
-                </GlassButton>
-              </div>
-            </GlassCard>
-          </div>
-
-          {/* Output Analysis Column */}
-          <div className="lg:col-span-7 space-y-5">
-            {error && (
-              <GlassCard className="p-4 border-red-500/30 text-red-400 text-xs font-mono">
-                {error}
-              </GlassCard>
-            )}
-
-            {/* Before vs After Comparison Card */}
-            <GlassCard className="p-6">
-              <div className="flex items-center justify-between pb-4 border-b border-white/[0.08]">
-                <p className="section-label">Cohort Transition Outcome</p>
-                {isMigrated ? (
-                  <span className="px-2.5 py-1 rounded-full text-xs font-mono font-bold bg-yellow-400 text-black shadow-[0_0_15px_#FFD400]">
-                    MIGRATION DETECTED
-                  </span>
-                ) : (
-                  <span className="px-2.5 py-1 rounded-full text-xs font-mono text-slate-400 bg-white/[0.05] border border-white/10">
-                    STABLE IN COHORT
-                  </span>
-                )}
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-5">
-                {/* Baseline State */}
-                <div className="p-4 rounded-2xl bg-white/[0.02] border border-white/[0.08] space-y-2">
-                  <div className="text-[10px] font-mono uppercase text-slate-400">Baseline Position</div>
-                  <p className="text-lg font-bold text-white">
-                    {baselineResult?.segment_name || 'Loading…'}
-                  </p>
-                  <div className="text-xs font-mono text-slate-400 space-y-1">
-                    <p>Centroid Distance: <span className="text-white">{baselineResult?.distance_to_centroid.toFixed(3) ?? '—'}</span></p>
-                    <p>Engagement: <span className="text-yellow-400">{baselineResult?.engagement_level ?? '—'}</span></p>
-                  </div>
+          {/* WHAT-IF COUNTERFACTUAL PROFILE */}
+          <GlassCard className="p-6 lg:p-8 space-y-6 border-yellow-400/30 bg-gradient-to-br from-yellow-400/[0.02] via-white/[0.02] to-transparent shadow-[0_0_30px_rgba(255,212,0,0.06)]">
+            <div className="flex items-center justify-between pb-4 border-b border-white/[0.08]">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-lg bg-yellow-400/20 border border-yellow-400/40 flex items-center justify-center text-yellow-400 font-mono font-bold text-xs">
+                  B
                 </div>
-
-                {/* Counterfactual State */}
-                <div className={`p-4 rounded-2xl border space-y-2 transition-all ${
-                  isMigrated
-                    ? 'bg-yellow-400/[0.06] border-yellow-400/50 shadow-[0_0_20px_rgba(255,212,0,0.12)]'
-                    : 'bg-white/[0.02] border-white/[0.08]'
-                }`}>
-                  <div className="text-[10px] font-mono uppercase text-yellow-400 font-bold">
-                    Counterfactual Position
-                  </div>
-                  <p className="text-lg font-bold text-white">
-                    {counterfactualResult?.segment_name || 'Loading…'}
-                  </p>
-                  <div className="text-xs font-mono text-slate-400 space-y-1">
-                    <p>Centroid Distance: <span className="text-white">{counterfactualResult?.distance_to_centroid.toFixed(3) ?? '—'}</span></p>
-                    <p>Engagement: <span className="text-yellow-400">{counterfactualResult?.engagement_level ?? '—'}</span></p>
-                  </div>
+                <div>
+                  <h3 className="text-base font-bold text-white tracking-wide">WHAT-IF PROFILE</h3>
+                  <p className="text-[11px] font-mono text-yellow-400/80">Hypothetical Perturbations</p>
                 </div>
               </div>
+              <span className="px-2.5 py-1 rounded-full text-[10px] font-mono font-bold bg-yellow-400/10 text-yellow-400 border border-yellow-400/30">
+                SIMULATED
+              </span>
+            </div>
 
-              {/* Explainable Shift Rationale */}
-              {counterfactualResult && (
-                <div className="mt-5 p-4 rounded-2xl bg-white/[0.02] border border-white/[0.06] space-y-2">
-                  <div className="flex items-center gap-2 text-xs font-mono font-bold text-yellow-400 uppercase">
-                    <Target className="w-3.5 h-3.5" />
-                    <span>Inference Decision Boundary Reason</span>
+            <div className="space-y-4">
+              <div>
+                <div className="flex justify-between text-xs font-mono mb-1.5">
+                  <span className="text-slate-300">Watch Time:</span>
+                  <span className="text-yellow-400 font-bold">{cfWatchTime} hours</span>
+                </div>
+                <input
+                  type="range"
+                  min="5"
+                  max="240"
+                  value={cfWatchTime}
+                  onChange={e => setCfWatchTime(Number(e.target.value))}
+                  className="w-full accent-yellow-400 cursor-pointer"
+                />
+              </div>
+
+              <div>
+                <div className="flex justify-between text-xs font-mono mb-1.5">
+                  <span className="text-slate-300">Avg Session Duration:</span>
+                  <span className="text-yellow-400 font-bold">{cfSession} mins</span>
+                </div>
+                <input
+                  type="range"
+                  min="5"
+                  max="200"
+                  value={cfSession}
+                  onChange={e => setCfSession(Number(e.target.value))}
+                  className="w-full accent-yellow-400 cursor-pointer"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <div className="flex justify-between text-[11px] font-mono mb-1">
+                    <span className="text-slate-400">Sessions/Wk:</span>
+                    <span className="text-yellow-400 font-bold">{cfSessionsPerWeek}</span>
                   </div>
-                  <p className="text-xs text-slate-300 leading-relaxed font-normal">
-                    {counterfactualResult.segment_explanation}
-                  </p>
+                  <input
+                    type="range"
+                    min="1"
+                    max="20"
+                    value={cfSessionsPerWeek}
+                    onChange={e => setCfSessionsPerWeek(Number(e.target.value))}
+                    className="w-full accent-yellow-400 cursor-pointer"
+                  />
                 </div>
-              )}
-            </GlassCard>
+                <div>
+                  <div className="flex justify-between text-[11px] font-mono mb-1">
+                    <span className="text-slate-400">Completion:</span>
+                    <span className="text-yellow-400 font-bold">{cfCompletionRate}%</span>
+                  </div>
+                  <input
+                    type="range"
+                    min="5"
+                    max="100"
+                    value={cfCompletionRate}
+                    onChange={e => setCfCompletionRate(Number(e.target.value))}
+                    className="w-full accent-yellow-400 cursor-pointer"
+                  />
+                </div>
+              </div>
 
-            {/* Counterfactual Personalized Recommendations */}
-            {counterfactualResult && (
-              <GlassCard className="p-6">
-                <p className="section-label mb-3">Counterfactual Adapted Recommendations</p>
-                <div className="space-y-2">
-                  {counterfactualResult.recommendations.map((rec, i) => (
-                    <div
-                      key={i}
-                      className="p-3 rounded-xl bg-white/[0.02] border border-white/[0.06] flex items-start gap-3 text-xs text-slate-200"
-                    >
-                      <CheckCircle2 className="w-4 h-4 text-yellow-400 shrink-0 mt-0.5" />
-                      <div>
-                        <p className="font-semibold text-white">{rec}</p>
-                        <p className="text-slate-400 text-[11px] mt-0.5">
-                          {counterfactualResult.recommendation_rationales[i]}
-                        </p>
-                      </div>
-                    </div>
-                  ))}
+              <div>
+                <p className="text-[11px] font-mono text-yellow-400 uppercase tracking-wider mb-2 font-semibold">
+                  Audited Genres ({cfGenres.length} selected):
+                </p>
+                <div className="flex flex-wrap gap-1.5">
+                  {AUDITED_GENRES.map(g => {
+                    const active = cfGenres.includes(g)
+                    return (
+                      <button
+                        key={g}
+                        onClick={() => toggleGenre(g, false)}
+                        className={`px-2.5 py-1 rounded-lg text-xs font-mono font-medium transition-all ${
+                          active
+                            ? 'bg-yellow-400 text-black font-bold border border-yellow-400 shadow-[0_0_12px_rgba(255,212,0,0.3)]'
+                            : 'bg-white/[0.02] text-slate-400 border border-white/[0.05] hover:border-yellow-400/30'
+                        }`}
+                      >
+                        {g}
+                      </button>
+                    )
+                  })}
                 </div>
-              </GlassCard>
-            )}
-          </div>
+              </div>
+            </div>
+          </GlassCard>
         </div>
+
+        {/* Action Bar */}
+        <div className="flex justify-center">
+          <GlassButton
+            onClick={runSimulation}
+            disabled={loading}
+            className="px-10 py-3.5 text-sm font-bold shadow-[0_0_30px_rgba(255,212,0,0.3)]"
+          >
+            {loading ? (
+              <>
+                <Loader2 className="w-4 h-4 mr-2 animate-spin text-black" />
+                Simulating KMeans Boundaries...
+              </>
+            ) : (
+              <>
+                <Sparkles className="w-4 h-4 mr-2 text-black" />
+                SIMULATE COUNTERFACTUAL
+              </>
+            )}
+          </GlassButton>
+        </div>
+
+        {error && (
+          <div className="p-4 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 text-xs font-mono flex items-center gap-3">
+            <AlertTriangle className="w-4 h-4 flex-shrink-0" />
+            <span>{error}</span>
+          </div>
+        )}
+
+        {/* RESULTS: SEGMENT TRANSITION & ATTRIBUTION */}
+        {result && (
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3 }}
+            className="space-y-6"
+          >
+            {/* SEGMENT TRANSITION SUMMARY */}
+            <GlassCard className="p-8 space-y-6 border-yellow-400/40">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Sliders className="w-4 h-4 text-yellow-400" />
+                  <span className="text-xs font-mono uppercase tracking-wider text-yellow-400 font-bold">
+                    SEGMENT TRANSITION OUTCOME
+                  </span>
+                </div>
+                <div className="px-3 py-1 rounded-full bg-white/[0.04] text-[11px] font-mono text-slate-400 border border-white/10">
+                  NOT CAUSAL INFERENCE
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-11 gap-4 items-center">
+                {/* ORIGINAL SEGMENT */}
+                <div className="md:col-span-5 p-5 rounded-2xl bg-white/[0.02] border border-white/[0.08] space-y-2">
+                  <span className="text-[10px] font-mono text-slate-400 uppercase tracking-wider">
+                    ORIGINAL CLASSIFICATION
+                  </span>
+                  <h4 className="text-xl font-black text-white">{result.original.segment_name}</h4>
+                  <div className="flex items-center justify-between text-xs font-mono text-slate-400 pt-2 border-t border-white/[0.06]">
+                    <span>Distance to Centroid:</span>
+                    <span className="text-white font-bold">{result.original.distance_to_centroid.toFixed(3)}</span>
+                  </div>
+                </div>
+
+                {/* TRANSITION ARROW */}
+                <div className="md:col-span-1 flex justify-center py-2">
+                  <div className={`p-3 rounded-full ${
+                    result.segment_transition.changed
+                      ? 'bg-yellow-400 text-black shadow-[0_0_20px_rgba(255,212,0,0.5)]'
+                      : 'bg-zinc-800 text-slate-400'
+                  }`}>
+                    <ArrowRight className="w-5 h-5" />
+                  </div>
+                </div>
+
+                {/* COUNTERFACTUAL SEGMENT */}
+                <div className="md:col-span-5 p-5 rounded-2xl bg-yellow-400/[0.04] border border-yellow-400/40 space-y-2">
+                  <div className="flex justify-between items-center">
+                    <span className="text-[10px] font-mono text-yellow-400 uppercase tracking-wider">
+                      COUNTERFACTUAL CLASSIFICATION
+                    </span>
+                    {result.segment_transition.changed ? (
+                      <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-yellow-400 text-black">
+                        TRANSITIONED
+                      </span>
+                    ) : (
+                      <span className="px-2 py-0.5 rounded text-[10px] font-mono text-slate-400 bg-white/[0.05]">
+                        SAME CLUSTER
+                      </span>
+                    )}
+                  </div>
+                  <h4 className="text-xl font-black text-yellow-400">{result.counterfactual.segment_name}</h4>
+                  <div className="flex items-center justify-between text-xs font-mono text-slate-400 pt-2 border-t border-white/[0.06]">
+                    <span>Distance to Centroid:</span>
+                    <span className="text-yellow-400 font-bold">{result.counterfactual.distance_to_centroid.toFixed(3)}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Mathematical Explanation */}
+              <div className="p-4 rounded-xl bg-white/[0.02] border border-white/[0.06] space-y-2">
+                <p className="text-xs font-mono text-yellow-400 uppercase font-bold tracking-wider">
+                  Why did this assignment happen?
+                </p>
+                <p className="text-xs text-slate-300 leading-relaxed font-sans">
+                  {result.explanation}
+                </p>
+              </div>
+            </GlassCard>
+
+            {/* CHANGED FEATURES & ATTRIBUTION TABLE */}
+            <GlassCard className="p-6 lg:p-8 space-y-4">
+              <div className="flex items-center justify-between pb-3 border-b border-white/[0.08]">
+                <div>
+                  <h4 className="text-sm font-bold text-white uppercase tracking-wider font-mono">
+                    Changed Features & Attribution Impact
+                  </h4>
+                  <p className="text-xs text-slate-400 mt-0.5">
+                    Quantified mathematical pull towards the target KMeans cluster centroid
+                  </p>
+                </div>
+                <span className="text-[10px] font-mono text-yellow-400 bg-yellow-400/10 px-2.5 py-1 rounded border border-yellow-400/30">
+                  {result.changed_features.length} FEATURES MODIFIED
+                </span>
+              </div>
+
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs font-mono">
+                  <thead>
+                    <tr className="border-b border-white/[0.06] text-slate-400 uppercase text-[10px]">
+                      <th className="py-2.5 px-3">Feature</th>
+                      <th className="py-2.5 px-3 text-right">Original</th>
+                      <th className="py-2.5 px-3 text-center">→</th>
+                      <th className="py-2.5 px-3">Counterfactual</th>
+                      <th className="py-2.5 px-3 text-right">Delta</th>
+                      <th className="py-2.5 px-3 text-right">Target Pull Index</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-white/[0.04]">
+                    {result.changed_features.map(f => {
+                      const isPositivePull = f.pull_towards_target_centroid > 0
+                      return (
+                        <tr key={f.feature_name} className="hover:bg-white/[0.02]">
+                          <td className="py-2.5 px-3 text-white font-sans font-semibold">
+                            {f.display_name}
+                          </td>
+                          <td className="py-2.5 px-3 text-right text-slate-400">
+                            {f.original_value}
+                          </td>
+                          <td className="py-2.5 px-3 text-center text-zinc-600">→</td>
+                          <td className="py-2.5 px-3 text-yellow-400 font-bold">
+                            {f.counterfactual_value}
+                          </td>
+                          <td className="py-2.5 px-3 text-right text-slate-300">
+                            {f.delta > 0 ? `+${f.delta}` : f.delta}
+                          </td>
+                          <td className="py-2.5 px-3 text-right">
+                            <span className={`px-2 py-0.5 rounded text-[11px] font-bold ${
+                              isPositivePull
+                                ? 'bg-yellow-400/10 text-yellow-400 border border-yellow-400/30'
+                                : 'bg-zinc-800 text-slate-400'
+                            }`}>
+                              {f.pull_towards_target_centroid.toFixed(3)}
+                            </span>
+                          </td>
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                </table>
+              </div>
+
+              <div className="pt-2 flex items-center justify-between text-[11px] font-mono text-slate-500 border-t border-white/[0.06]">
+                <div className="flex items-center gap-1.5">
+                  <Shield className="w-3.5 h-3.5 text-yellow-400" />
+                  <span>{result.disclaimer}</span>
+                </div>
+              </div>
+            </GlassCard>
+          </motion.div>
+        )}
       </div>
     </div>
   )
