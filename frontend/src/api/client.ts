@@ -4,10 +4,16 @@
  * In production (Docker), Nginx proxies /api → api:8000.
  */
 
-const API_BASE = import.meta.env.VITE_API_URL || '/api'
+const RAW_API_BASE = import.meta.env.VITE_API_URL || '/api'
+const API_BASE = RAW_API_BASE.replace(/\/+$/, '')
+
+function getApiUrl(path: string): string {
+  const normalized = path.startsWith('/') ? path : `/${path}`
+  return `${API_BASE}${normalized}`
+}
 
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
-  const url = `${API_BASE}${path}`
+  const url = getApiUrl(path)
   const res = await fetch(url, {
     headers: { 'Content-Type': 'application/json', ...options.headers },
     ...options,
@@ -186,7 +192,7 @@ export const api = {
   uploadDataset: async (file: File): Promise<DatasetInspectionResponse> => {
     const form = new FormData()
     form.append('file', file)
-    const res = await fetch(`${API_BASE}/upload`, { method: 'POST', body: form })
+    const res = await fetch(getApiUrl('/upload'), { method: 'POST', body: form })
     if (!res.ok) {
       let detail = `HTTP ${res.status}`
       try { const e = await res.json(); detail = e.detail || detail } catch {}
