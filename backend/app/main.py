@@ -4,6 +4,14 @@ AudienceIQ — FastAPI Application Entry Point
 from __future__ import annotations
 
 import logging
+import os
+import sys
+from pathlib import Path
+
+# Ensure backend directory is in sys.path when running standalone or via uvicorn from root
+_backend_dir = str(Path(__file__).resolve().parent.parent)
+if _backend_dir not in sys.path:
+    sys.path.insert(0, _backend_dir)
 
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -39,6 +47,7 @@ app = FastAPI(
 app.add_middleware(
     CORSMiddleware,
     allow_origins=CORS_ORIGINS,
+    allow_origin_regex=r"^https?://.*",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -98,3 +107,14 @@ async def root():
         "docs": "/docs",
         "health": "/health",
     }
+
+
+# ---------------------------------------------------------------------------
+# Direct entrypoint (listens on 0.0.0.0 and $PORT or 8000)
+# ---------------------------------------------------------------------------
+if __name__ == "__main__":
+    import uvicorn
+
+    port = int(os.getenv("PORT", "8000"))
+    uvicorn.run("app.main:app", host="0.0.0.0", port=port, workers=1)
+

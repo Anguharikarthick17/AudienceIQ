@@ -1,0 +1,72 @@
+{
+  "0": {
+    "cluster_id": 0,
+    "user_count": 854,
+    "audience_pct": 42.7,
+    "feature_means": {
+      "watch_time__watch_time_hours": 102.3473,
+      "session_dur__avg_session_duration_mins": 112.0156,
+      "session_cnt__sessions_per_week": 8.8883,
+      "completion__completion_rate": 0.8418,
+      "recency__days_since_last_watch": 15.0047,
+      "activity__weekend_activity_ratio": 0.5027,
+      "genre__Action": 0.2963,
+      "genre__Animation": 0.1464,
+      "genre__Comedy": 0.2881,
+      "genre__Documentary": 0.1393,
+      "genre__Drama": 0.2611,
+      "genre__Horror": 0.1171,
+      "genre__Romance": 0.1511,
+      "genre__Sci-Fi": 0.2705,
+      "genre__Thriller": 0.2623,
+      "genre__Reality": 0.1171
+    },
+    "dominant_genres": [
+      "Action",
+      "Comedy",
+      "Sci-Fi",
+      "Thriller",
+      "Drama"
+    ],
+    "avg_watch_time": 102.347,
+    "avg_session_mins": 112.016,
+    "avg_sessions": 8.888,
+    "avg_completion_rate": 0.842,
+    "segment_name": "High-Engagement Genre Explorers"
+  },
+  "1": {
+    "cluster_id": 1,
+    "user_count": 1146,
+    "audience_pct": 57.3,
+    "feature_means": {
+      "watch_time__watch_time_hours": 30.2758,
+      "session_dur__avg_session_duration_mins": 34.6261,
+      "session_cnt__sessions_per_week": 4.1983,
+      "completion__completion_rate": 0.4694,
+      "recency__days_since_last_watch": 14.5244,
+      "activity__weekend_activity_ratio": 0.5026,
+      "genre__Action": 0.2531,
+      "genre__Animation": 0.2417,
+      "genre__Comedy": 0.233,
+      "genre__Documentary": 0.2426,
+      "genre__Drama": 0.2347,
+      "genre__Horror": 0.2443,
+      "genre__Romance": 0.2164,
+      "genre__Sci-Fi": 0.2295,
+      "genre__Thriller": 0.2164,
+      "genre__Reality": 0.2356
+    },
+    "dominant_genres": [
+      "Action",
+      "Horror",
+      "Documentary",
+      "Animation",
+      "Reality"
+    ],
+    "avg_watch_time": 30.276,
+    "avg_session_mins": 34.626,
+    "avg_sessions": 4.198,
+    "avg_completion_rate": 0.469,
+    "segment_name": "Genre Explorers"
+  }
+}

@@ -1,0 +1,154 @@
+{
+  "evaluated_at": "2026-09-17T12:47:42.802948+00:00",
+  "api_base": "http://127.0.0.1:8000",
+  "total_tests": 20,
+  "passed": 20,
+  "failed": 0,
+  "pass_rate": 100.0,
+  "avg_response_time_ms": 5.55,
+  "min_response_time_ms": 0.45,
+  "max_response_time_ms": 19.87,
+  "tests": [
+    {
+      "name": "health_check_ok",
+      "passed": true,
+      "status_code": 200,
+      "response_time_ms": 0.54,
+      "details": "OK"
+    },
+    {
+      "name": "health_model_loaded",
+      "passed": true,
+      "status_code": 200,
+      "response_time_ms": 0.45,
+      "details": "OK"
+    },
+    {
+      "name": "recommend_valid_high_engagement",
+      "passed": true,
+      "status_code": 200,
+      "response_time_ms": 19.87,
+      "details": "OK"
+    },
+    {
+      "name": "recommend_valid_casual",
+      "passed": true,
+      "status_code": 200,
+      "response_time_ms": 5.38,
+      "details": "OK"
+    },
+    {
+      "name": "recommend_valid_multi_genre",
+      "passed": true,
+      "status_code": 200,
+      "response_time_ms": 7.81,
+      "details": "OK"
+    },
+    {
+      "name": "recommend_response_schema_complete",
+      "passed": true,
+      "status_code": 200,
+      "response_time_ms": 3.67,
+      "details": "OK"
+    },
+    {
+      "name": "recommend_missing_user_id",
+      "passed": true,
+      "status_code": 422,
+      "response_time_ms": 6.9,
+      "details": "OK"
+    },
+    {
+      "name": "recommend_missing_genres",
+      "passed": true,
+      "status_code": 422,
+      "response_time_ms": 2.43,
+      "details": "OK"
+    },
+    {
+      "name": "recommend_missing_watch_time",
+      "passed": true,
+      "status_code": 422,
+      "response_time_ms": 2.28,
+      "details": "OK"
+    },
+    {
+      "name": "recommend_negative_watch_time",
+      "passed": true,
+      "status_code": 422,
+      "response_time_ms": 6.06,
+      "details": "OK"
+    },
+    {
+      "name": "recommend_zero_watch_time",
+      "passed": true,
+      "status_code": 422,
+      "response_time_ms": 10.42,
+      "details": "OK"
+    },
+    {
+      "name": "recommend_empty_genre_list",
+      "passed": true,
+      "status_code": 422,
+      "response_time_ms": 1.82,
+      "details": "OK"
+    },
+    {
+      "name": "recommend_wrong_type_watch_time",
+      "passed": true,
+      "status_code": 422,
+      "response_time_ms": 7.6,
+      "details": "OK"
+    },
+    {
+      "name": "recommend_very_large_watch_time",
+      "passed": true,
+      "status_code": 422,
+      "response_time_ms": 6.42,
+      "details": "OK"
+    },
+    {
+      "name": "recommend_max_valid_watch_time",
+      "passed": true,
+      "status_code": 200,
+      "response_time_ms": 4.7,
+      "details": "OK"
+    },
+    {
+      "name": "recommend_unknown_genres_still_processes",
+      "passed": true,
+      "status_code": 200,
+      "response_time_ms": 8.19,
+      "details": "OK"
+    },
+    {
+      "name": "recommend_minimum_valid_watch_time",
+      "passed": true,
+      "status_code": 200,
+      "response_time_ms": 5.75,
+      "details": "OK"
+    },
+    {
+      "name": "dashboard_returns_segments",
+      "passed": true,
+      "status_code": 200,
+      "response_time_ms": 1.81,
+      "details": "OK"
+    },
+    {
+      "name": "segments_list",
+      "passed": true,
+      "status_code": 200,
+      "response_time_ms": 5.14,
+      "details": "OK"
+    },
+    {
+      "name": "model_info",
+      "passed": true,
+      "status_code": 200,
+      "response_time_ms": 3.68,
+      "details": "OK"
+    }
+  ],
+  "errors": []
+}

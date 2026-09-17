@@ -1,0 +1,78 @@
+{
+  "trained_at": "2026-09-17T12:43:38.021861+00:00",
+  "n_clusters": 2,
+  "silhouette_score": 0.547689,
+  "inertia": 27664.9019,
+  "n_training_users": 2000,
+  "n_features": 16,
+  "feature_names": [
+    "watch_time__watch_time_hours",
+    "session_dur__avg_session_duration_mins",
+    "session_cnt__sessions_per_week",
+    "completion__completion_rate",
+    "recency__days_since_last_watch",
+    "activity__weekend_activity_ratio",
+    "genre__Action",
+    "genre__Animation",
+    "genre__Comedy",
+    "genre__Documentary",
+    "genre__Drama",
+    "genre__Horror",
+    "genre__Romance",
+    "genre__Sci-Fi",
+    "genre__Thriller",
+    "genre__Reality"
+  ],
+  "cluster_sizes": [
+    854,
+    1146
+  ],
+  "k_evaluation": [
+    {
+      "k": 2,
+      "silhouette_score": 0.573882,
+      "inertia": 3178382.8319
+    },
+    {
+      "k": 3,
+      "silhouette_score": 0.565221,
+      "inertia": 2006172.596
+    },
+    {
+      "k": 4,
+      "silhouette_score": 0.469857,
+      "inertia": 1379025.1588
+    },
+    {
+      "k": 5,
+      "silhouette_score": 0.426134,
+      "inertia": 1135376.2503
+    },
+    {
+      "k": 6,
+      "silhouette_score": 0.40831,
+      "inertia": 1011126.3534
+    },
+    {
+      "k": 7,
+      "silhouette_score": 0.355027,
+      "inertia": 916258.667
+    },
+    {
+      "k": 8,
+      "silhouette_score": 0.353967,
+      "inertia": 823445.7339
+    },
+    {
+      "k": 9,
+      "silhouette_score": 0.356514,
+      "inertia": 755043.6309
+    },
+    {
+      "k": 10,
+      "silhouette_score": 0.350105,
+      "inertia": 693087.0182
+    }
+  ],
+  "random_state": 42
+}
