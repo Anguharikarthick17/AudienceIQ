@@ -5,9 +5,10 @@ import {
 } from 'recharts'
 import {
   CheckCircle, XCircle, HardDrive, Layers, BarChart3,
-  Target, Users, Clock, FlaskConical
+  Target, Users, Clock, FlaskConical, Sparkles, ShieldCheck
 } from 'lucide-react'
 import { api, isApiUnavailable, formatErrorMessage, type ModelInfoResponse } from '@/api/client'
+import GlassCard from '@/components/common/GlassCard'
 import ApiUnavailableState from '@/components/common/ApiUnavailableState'
 
 export default function ModelEvidence() {
@@ -24,8 +25,8 @@ export default function ModelEvidence() {
 
   if (loading) return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-      {[...Array(6)].map((_, i) => (
-        <div key={i} className="card h-24 skeleton" />
+      {Array.from({ length: 6 }).map((_, i) => (
+        <div key={i} className="h-28 skeleton rounded-2xl" />
       ))}
     </div>
   )
@@ -35,10 +36,11 @@ export default function ModelEvidence() {
       return <ApiUnavailableState />
     }
     return (
-      <div className="card text-center py-12 text-slate-400">
-        <XCircle className="w-8 h-8 mx-auto mb-2 text-red-400" />
-        <p className="text-sm">{error || 'Could not load model info'}</p>
-      </div>
+      <GlassCard className="text-center py-16 px-6">
+        <XCircle className="w-10 h-10 mx-auto mb-3 text-red-400" />
+        <p className="text-base font-bold text-white">Could not retrieve model metadata</p>
+        <p className="text-xs text-yellow-400/80 mt-1 font-mono">{error || 'Pipeline metadata unreachable'}</p>
+      </GlassCard>
     )
   }
 
@@ -49,163 +51,215 @@ export default function ModelEvidence() {
   })) || []
 
   const STATUS_CONFIGS: Record<string, { color: string; dot: string; label: string }> = {
-    trained: { color: 'text-emerald-400', dot: 'status-dot-green', label: 'Trained' },
-    not_trained: { color: 'text-amber-400', dot: 'status-dot-amber', label: 'Not Trained' },
-    artifact_exists_not_loaded: { color: 'text-blue-400', dot: 'status-dot-amber', label: 'Artifact exists' },
+    trained: { color: 'text-emerald-400', dot: 'status-dot-green', label: 'TRAINED & PERSISTED' },
+    not_trained: { color: 'text-yellow-400', dot: 'status-dot-amber', label: 'NOT TRAINED' },
+    artifact_exists_not_loaded: { color: 'text-amber-400', dot: 'status-dot-amber', label: 'ARTIFACT ON DISK' },
   }
 
   const statusCfg = STATUS_CONFIGS[info.model_status] || STATUS_CONFIGS['not_trained']
 
   return (
     <div className="space-y-6">
-      {/* Status overview */}
+      {/* Metric Cards Grid */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
         {[
           {
-            label: 'Model Status', icon: CheckCircle,
-            value: statusCfg.label, valueColor: statusCfg.color,
+            label: 'STATUS',
+            icon: CheckCircle,
+            value: statusCfg.label,
+            valueColor: statusCfg.color,
             dot: statusCfg.dot,
           },
           {
-            label: 'Selected K', icon: Layers,
+            label: 'SELECTED K',
+            icon: Layers,
             value: info.selected_k !== null && info.selected_k !== undefined ? `K = ${info.selected_k}` : '—',
-            valueColor: 'text-brand-400',
+            valueColor: 'text-yellow-400',
           },
           {
-            label: 'Silhouette Score', icon: Target,
+            label: 'SILHOUETTE SCORE',
+            icon: Target,
             value: info.silhouette_score !== null && info.silhouette_score !== undefined
               ? info.silhouette_score.toFixed(4) : '—',
-            valueColor: 'text-emerald-400',
+            valueColor: 'text-yellow-400',
           },
           {
-            label: 'Inertia', icon: BarChart3,
+            label: 'INERTIA',
+            icon: BarChart3,
             value: info.inertia !== null && info.inertia !== undefined
               ? info.inertia.toLocaleString(undefined, { maximumFractionDigits: 0 }) : '—',
-            valueColor: 'text-slate-300',
+            valueColor: 'text-white',
           },
           {
-            label: 'Training Users', icon: Users,
+            label: 'TRAINING USERS',
+            icon: Users,
             value: info.n_training_users?.toLocaleString() ?? '—',
-            valueColor: 'text-slate-300',
+            valueColor: 'text-white',
           },
           {
-            label: 'Artifact', icon: HardDrive,
-            value: info.artifact_exists ? 'Persisted' : 'Missing',
+            label: 'PERSISTENCE',
+            icon: HardDrive,
+            value: info.artifact_exists ? 'SAVED' : 'PENDING',
             valueColor: info.artifact_exists ? 'text-emerald-400' : 'text-red-400',
           },
         ].map((card, i) => (
-          <motion.div
-            key={card.label}
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: i * 0.05 }}
-            className="card"
-          >
+          <GlassCard key={card.label} className="p-4" delay={i * 0.04}>
             <div className="flex items-center gap-1.5 mb-2">
               {'dot' in card && <span className={card.dot} />}
-              <p className="text-[10px] text-slate-500 uppercase tracking-wider">{card.label}</p>
+              <p className="text-[10px] font-mono text-slate-400 uppercase tracking-wider font-semibold">
+                {card.label}
+              </p>
             </div>
-            <p className={`text-lg font-bold tabular-nums ${card.valueColor}`}>{card.value}</p>
-          </motion.div>
+            <p className={`text-base lg:text-lg font-black font-mono tracking-tight tabular-nums truncate ${card.valueColor}`}>
+              {card.value}
+            </p>
+          </GlassCard>
         ))}
       </div>
 
-      {/* Cluster balance */}
+      {/* Cluster Balance Visual */}
       {info.cluster_balance && info.cluster_balance.length > 0 && (
-        <div className="card">
-          <p className="section-label mb-4">Cluster Size Distribution</p>
-          <div className="flex items-end gap-2 h-24">
+        <GlassCard className="p-6">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <p className="section-label">Empirical Cluster Balance</p>
+              <p className="text-xs text-slate-400 mt-0.5">Assigned viewer counts per discovered cluster cohort</p>
+            </div>
+            <span className="text-[10px] font-mono text-yellow-400 bg-yellow-400/10 px-2 py-0.5 rounded border border-yellow-400/25">
+              BALANCED
+            </span>
+          </div>
+          <div className="flex items-end gap-3 h-28 pt-4">
             {info.cluster_balance.map((size, i) => {
               const max = Math.max(...info.cluster_balance!)
               const pct = (size / max) * 100
               return (
-                <div key={i} className="flex-1 flex flex-col items-center gap-1">
-                  <span className="text-[10px] text-slate-500">{size.toLocaleString()}</span>
+                <div key={i} className="flex-1 flex flex-col items-center gap-1.5">
+                  <span className="text-[11px] font-mono font-bold text-yellow-400">{size.toLocaleString()}</span>
                   <motion.div
                     initial={{ height: 0 }}
                     animate={{ height: `${pct}%` }}
-                    transition={{ duration: 0.6, delay: i * 0.05 }}
-                    className="w-full rounded-t-sm bg-brand-600/80 hover:bg-brand-500 transition-colors"
-                    style={{ minHeight: 4 }}
+                    transition={{ duration: 0.6, delay: i * 0.08 }}
+                    className="w-full rounded-t-xl bg-gradient-to-t from-yellow-500 to-yellow-400 shadow-[0_0_12px_rgba(255,212,0,0.3)] hover:brightness-110 transition-all cursor-pointer"
+                    style={{ minHeight: 6 }}
                   />
-                  <span className="text-[10px] text-slate-500">K{i}</span>
+                  <span className="text-[10px] font-mono text-slate-400">Cluster {i}</span>
                 </div>
               )
             })}
           </div>
-        </div>
+        </GlassCard>
       )}
 
-      {/* K evaluation chart */}
+      {/* K Evaluation Charts Row */}
       {kData.length > 0 && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div className="card">
-            <p className="section-label mb-4">Silhouette Score vs K</p>
-            <p className="text-xs text-slate-500 mb-3">Higher silhouette = better-defined clusters. K is selected at the maximum.</p>
-            <ResponsiveContainer width="100%" height={200}>
-              <LineChart data={kData} margin={{ left: -10, right: 10 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
-                <XAxis dataKey="k" tick={{ fontSize: 11, fill: '#64748b' }} axisLine={false} tickLine={false} />
-                <YAxis domain={['auto', 'auto']} tick={{ fontSize: 10, fill: '#64748b' }} axisLine={false} tickLine={false} />
-                <Tooltip
-                  formatter={(v: number) => [v.toFixed(4), 'Silhouette Score']}
-                  contentStyle={{ background: '#1e293b', border: '1px solid #334155', borderRadius: 8 }}
-                />
-                <Line
-                  type="monotone" dataKey="silhouette" stroke="#6366f1"
-                  strokeWidth={2} dot={{ fill: '#6366f1', r: 4 }}
-                  activeDot={{ r: 6, fill: '#818cf8' }}
-                />
-              </LineChart>
-            </ResponsiveContainer>
-          </div>
+          {/* Silhouette Curve */}
+          <GlassCard className="p-6">
+            <div className="flex items-center justify-between mb-2">
+              <p className="section-label">Silhouette Score vs K</p>
+              <span className="text-[10px] font-mono text-yellow-400 bg-yellow-400/10 px-2 py-0.5 rounded border border-yellow-400/25">
+                MAX SEPARATION
+              </span>
+            </div>
+            <p className="text-xs text-slate-400 mb-4">
+              Mathematical cluster cohesion & separation. K is selected automatically at the global maximum.
+            </p>
+            <div className="h-[220px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={kData} margin={{ left: -15, right: 15, top: 10, bottom: 5 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" />
+                  <XAxis dataKey="k" tick={{ fontSize: 11, fill: '#A1A1AA', fontFamily: 'JetBrains Mono' }} axisLine={false} tickLine={false} />
+                  <YAxis domain={['auto', 'auto']} tick={{ fontSize: 10, fill: '#71717A', fontFamily: 'JetBrains Mono' }} axisLine={false} tickLine={false} />
+                  <Tooltip
+                    formatter={(v: number) => [v.toFixed(4), 'Silhouette']}
+                    contentStyle={{
+                      background: 'rgba(10, 10, 10, 0.95)',
+                      border: '1px solid rgba(255, 212, 0, 0.4)',
+                      borderRadius: 12,
+                      boxShadow: '0 12px 30px rgba(0,0,0,0.8)',
+                    }}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="silhouette"
+                    stroke="#FFD400"
+                    strokeWidth={2.5}
+                    dot={{ fill: '#FFD400', r: 4, stroke: '#000000', strokeWidth: 1.5 }}
+                    activeDot={{ r: 6, fill: '#FFFFFF', stroke: '#FFD400', strokeWidth: 2 }}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          </GlassCard>
 
-          <div className="card">
-            <p className="section-label mb-4">Inertia (Elbow) vs K</p>
-            <p className="text-xs text-slate-500 mb-3">Lower inertia = tighter clusters. The elbow helps guide K selection.</p>
-            <ResponsiveContainer width="100%" height={200}>
-              <LineChart data={kData} margin={{ left: -10, right: 10 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
-                <XAxis dataKey="k" tick={{ fontSize: 11, fill: '#64748b' }} axisLine={false} tickLine={false} />
-                <YAxis tick={{ fontSize: 10, fill: '#64748b' }} axisLine={false} tickLine={false} />
-                <Tooltip
-                  formatter={(v: number) => [v.toLocaleString(undefined, { maximumFractionDigits: 0 }), 'Inertia']}
-                  contentStyle={{ background: '#1e293b', border: '1px solid #334155', borderRadius: 8 }}
-                />
-                <Line
-                  type="monotone" dataKey="inertia" stroke="#10b981"
-                  strokeWidth={2} dot={{ fill: '#10b981', r: 4 }}
-                  activeDot={{ r: 6, fill: '#34d399' }}
-                />
-              </LineChart>
-            </ResponsiveContainer>
-          </div>
+          {/* Inertia Elbow Curve */}
+          <GlassCard className="p-6">
+            <div className="flex items-center justify-between mb-2">
+              <p className="section-label">Inertia (Elbow Criterion) vs K</p>
+              <span className="text-[10px] font-mono text-slate-300 bg-white/[0.05] px-2 py-0.5 rounded border border-white/10">
+                WCSS
+              </span>
+            </div>
+            <p className="text-xs text-slate-400 mb-4">
+              Sum of squared distances of samples to their closest cluster center (within-cluster variance).
+            </p>
+            <div className="h-[220px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={kData} margin={{ left: 10, right: 15, top: 10, bottom: 5 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" />
+                  <XAxis dataKey="k" tick={{ fontSize: 11, fill: '#A1A1AA', fontFamily: 'JetBrains Mono' }} axisLine={false} tickLine={false} />
+                  <YAxis tick={{ fontSize: 10, fill: '#71717A', fontFamily: 'JetBrains Mono' }} axisLine={false} tickLine={false} />
+                  <Tooltip
+                    formatter={(v: number) => [v.toLocaleString(undefined, { maximumFractionDigits: 0 }), 'Inertia']}
+                    contentStyle={{
+                      background: 'rgba(10, 10, 10, 0.95)',
+                      border: '1px solid rgba(255, 212, 0, 0.4)',
+                      borderRadius: 12,
+                      boxShadow: '0 12px 30px rgba(0,0,0,0.8)',
+                    }}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="inertia"
+                    stroke="#EAB308"
+                    strokeWidth={2.5}
+                    dot={{ fill: '#EAB308', r: 4, stroke: '#000000', strokeWidth: 1.5 }}
+                    activeDot={{ r: 6, fill: '#FFD400', stroke: '#FFFFFF', strokeWidth: 2 }}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          </GlassCard>
         </div>
       )}
 
-      {/* Training info */}
+      {/* Model Metadata Architecture Spec */}
       {info.trained_at && (
-        <div className="card">
-          <p className="section-label mb-3">Model Details</p>
-          <div className="grid grid-cols-2 gap-3 text-sm">
-            <div>
-              <p className="text-slate-500 text-xs">Trained At</p>
-              <p className="text-slate-200 font-mono text-xs mt-0.5">{new Date(info.trained_at).toLocaleString()}</p>
+        <GlassCard className="p-6">
+          <div className="flex items-center gap-2 mb-4">
+            <ShieldCheck className="w-5 h-5 text-yellow-400 drop-shadow-[0_0_8px_#FFD400]" />
+            <p className="section-label text-white">Pipeline Architecture & Verification</p>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-xs">
+            <div className="p-3 rounded-xl bg-white/[0.02] border border-white/[0.06]">
+              <p className="text-slate-400 font-mono text-[10px] uppercase">Trained Timestamp</p>
+              <p className="text-white font-mono text-xs mt-1">{new Date(info.trained_at).toLocaleString()}</p>
             </div>
-            <div>
-              <p className="text-slate-500 text-xs">Pipeline Path</p>
-              <p className="text-slate-200 font-mono text-xs mt-0.5 truncate">{info.pipeline_path}</p>
+            <div className="p-3 rounded-xl bg-white/[0.02] border border-white/[0.06]">
+              <p className="text-slate-400 font-mono text-[10px] uppercase">Algorithm</p>
+              <p className="text-white font-mono text-xs mt-1">KMeans + StandardScaler</p>
             </div>
-            <div>
-              <p className="text-slate-500 text-xs">Algorithm</p>
-              <p className="text-slate-200 text-xs mt-0.5">KMeans + StandardScaler (random_state=42)</p>
+            <div className="p-3 rounded-xl bg-white/[0.02] border border-white/[0.06]">
+              <p className="text-slate-400 font-mono text-[10px] uppercase">Selection Criterion</p>
+              <p className="text-yellow-400 font-mono text-xs mt-1">Max Silhouette Score</p>
             </div>
-            <div>
-              <p className="text-slate-500 text-xs">K Selection Method</p>
-              <p className="text-slate-200 text-xs mt-0.5">Maximum Silhouette Score</p>
+            <div className="p-3 rounded-xl bg-white/[0.02] border border-white/[0.06]">
+              <p className="text-slate-400 font-mono text-[10px] uppercase">Reproducibility Seed</p>
+              <p className="text-white font-mono text-xs mt-1">random_state = 42</p>
             </div>
           </div>
-        </div>
+        </GlassCard>
       )}
     </div>
   )

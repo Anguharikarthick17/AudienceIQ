@@ -1,58 +1,56 @@
-import { useEffect, useState } from 'react'
-import { Activity, Clock } from 'lucide-react'
-import { api, isApiUnavailable } from '@/api/client'
+import { Github, FileText, Sparkles } from 'lucide-react'
+import StatusPill from '@/components/common/StatusPill'
+import GlassButton from '@/components/common/GlassButton'
 
-export default function TopBar({ title }: { title: string }) {
-  const [status, setStatus] = useState<'checking' | 'ready' | 'no_model' | 'offline'>('checking')
+interface TopBarProps {
+  title: string
+  subtitle?: string
+}
 
-  useEffect(() => {
-    api.health()
-      .then(h => setStatus(h.model_loaded ? 'ready' : 'no_model'))
-      .catch(e => {
-        if (isApiUnavailable(e)) {
-          setStatus('offline')
-        } else {
-          setStatus('no_model')
-        }
-      })
-  }, [])
-
+export default function TopBar({ title, subtitle }: TopBarProps) {
   return (
-    <header className="h-14 border-b border-slate-800 bg-slate-950/80 backdrop-blur-sm
-                       flex items-center justify-between px-6 shrink-0 sticky top-0 z-10">
-      <h1 className="text-base font-semibold text-slate-100">{title}</h1>
-
-      <div className="flex items-center gap-4">
-        {/* Model / API status pill */}
-        <div className="flex items-center gap-2 bg-slate-900 border border-slate-800
-                        rounded-full px-3 py-1.5">
-          {status === 'checking' && (
-            <>
-              <Clock className="w-3.5 h-3.5 text-slate-500 animate-spin" />
-              <span className="text-xs text-slate-500">Checking…</span>
-            </>
-          )}
-          {status === 'ready' && (
-            <>
-              <span className="status-dot-green" />
-              <span className="text-xs text-emerald-400 font-medium">Model Ready</span>
-            </>
-          )}
-          {status === 'no_model' && (
-            <>
-              <span className="status-dot-amber" />
-              <span className="text-xs text-amber-400 font-medium">No Model</span>
-            </>
-          )}
-          {status === 'offline' && (
-            <>
-              <span className="w-2 h-2 rounded-full bg-slate-500" />
-              <span className="text-xs text-slate-400 font-medium">API Offline</span>
-            </>
-          )}
+    <header className="h-16 border-b border-white/[0.08] bg-black/60 backdrop-blur-xl
+                       flex items-center justify-between px-6 lg:px-8 shrink-0 sticky top-0 z-10 select-none">
+      {/* Page Title & Breadcrumb */}
+      <div className="flex items-center gap-3 pl-10 lg:pl-0">
+        <div>
+          <div className="flex items-center gap-2">
+            <h1 className="text-base lg:text-lg font-bold text-white tracking-tight">{title}</h1>
+            <span className="text-xs font-mono text-yellow-400 bg-yellow-400/10 px-2 py-0.5 rounded-full border border-yellow-400/20">
+              PRO
+            </span>
+          </div>
+          {subtitle && <p className="text-xs text-slate-400">{subtitle}</p>}
         </div>
+      </div>
 
-        <Activity className="w-4 h-4 text-slate-600" />
+      {/* Right Controls */}
+      <div className="flex items-center gap-3">
+        {/* Real Live Model Status Pill */}
+        <StatusPill />
+
+        {/* Quick External Actions */}
+        <a
+          href="https://github.com/Anguharikarthick17/AudienceIQ"
+          target="_blank"
+          rel="noopener noreferrer"
+          title="GitHub Repository"
+        >
+          <GlassButton variant="icon" aria-label="GitHub Repository">
+            <Github className="w-4 h-4" />
+          </GlassButton>
+        </a>
+
+        <a
+          href="/docs"
+          target="_blank"
+          rel="noopener noreferrer"
+          title="FastAPI OpenAPI Docs"
+        >
+          <GlassButton variant="icon" aria-label="API Documentation">
+            <FileText className="w-4 h-4" />
+          </GlassButton>
+        </a>
       </div>
     </header>
   )
