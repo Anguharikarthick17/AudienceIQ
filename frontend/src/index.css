@@ -1,0 +1,237 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ---- Base ---------------------------------------------------------------- */
+@layer base {
+  * {
+    box-sizing: border-box;
+  }
+
+  html {
+    font-family: 'Inter', system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    @apply bg-slate-950 text-slate-100;
+    min-height: 100vh;
+  }
+
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  ::-webkit-scrollbar-track {
+    @apply bg-slate-900;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    @apply bg-slate-700 rounded-full;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-slate-600;
+  }
+}
+
+/* ---- Component Utilities ------------------------------------------------- */
+@layer components {
+  /* Glass card */
+  .card {
+    @apply bg-slate-900 border border-slate-800 rounded-xl p-5;
+  }
+
+  .card-glass {
+    background: linear-gradient(135deg, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0.01) 100%);
+    @apply border border-slate-700/50 rounded-xl backdrop-blur-sm;
+  }
+
+  /* Metric card */
+  .metric-card {
+    @apply card transition-all duration-200 hover:border-slate-700 hover:shadow-glow-sm;
+  }
+
+  /* Badge */
+  .badge {
+    @apply inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium;
+  }
+
+  .badge-brand {
+    @apply badge bg-brand-500/15 text-brand-300 border border-brand-500/20;
+  }
+
+  .badge-green {
+    @apply badge bg-emerald-500/15 text-emerald-400 border border-emerald-500/20;
+  }
+
+  .badge-amber {
+    @apply badge bg-amber-500/15 text-amber-400 border border-amber-500/20;
+  }
+
+  .badge-red {
+    @apply badge bg-red-500/15 text-red-400 border border-red-500/20;
+  }
+
+  /* Button */
+  .btn {
+    @apply inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium
+           transition-all duration-150 disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  .btn-primary {
+    @apply btn bg-brand-600 hover:bg-brand-500 text-white shadow-glow-sm
+           active:scale-95;
+  }
+
+  .btn-secondary {
+    @apply btn bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700;
+  }
+
+  .btn-ghost {
+    @apply btn text-slate-400 hover:text-slate-100 hover:bg-slate-800;
+  }
+
+  /* Input */
+  .input {
+    @apply w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2
+           text-sm text-slate-100 placeholder-slate-500
+           focus:outline-none focus:ring-2 focus:ring-brand-500/50 focus:border-brand-500/50
+           transition-colors duration-150;
+  }
+
+  /* Section label */
+  .section-label {
+    @apply text-xs font-semibold uppercase tracking-widest text-slate-500;
+  }
+
+  /* Stat value */
+  .stat-value {
+    @apply text-2xl font-bold text-slate-50 tabular-nums;
+  }
+
+  .stat-label {
+    @apply text-xs text-slate-400 mt-0.5;
+  }
+
+  /* Status dot */
+  .status-dot {
+    @apply w-2 h-2 rounded-full;
+  }
+
+  .status-dot-green {
+    @apply status-dot bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.6)];
+  }
+
+  .status-dot-amber {
+    @apply status-dot bg-amber-400;
+  }
+
+  .status-dot-red {
+    @apply status-dot bg-red-400;
+  }
+
+  .status-dot-gray {
+    @apply status-dot bg-slate-600;
+  }
+
+  /* Divider */
+  .divider {
+    @apply border-t border-slate-800 my-4;
+  }
+
+  /* Table */
+  .data-table {
+    @apply w-full text-sm;
+  }
+
+  .data-table th {
+    @apply text-left text-xs font-semibold uppercase tracking-wider text-slate-500 pb-3;
+  }
+
+  .data-table td {
+    @apply py-3 border-t border-slate-800/60 text-slate-300;
+  }
+
+  /* Page header */
+  .page-header {
+    @apply mb-8;
+  }
+
+  .page-title {
+    @apply text-2xl font-bold text-slate-50;
+  }
+
+  .page-subtitle {
+    @apply text-sm text-slate-400 mt-1;
+  }
+
+  /* Sidebar nav item */
+  .nav-item {
+    @apply flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium
+           text-slate-400 hover:text-slate-100 hover:bg-slate-800/60
+           transition-all duration-150 cursor-pointer;
+  }
+
+  .nav-item-active {
+    @apply text-slate-100 bg-brand-600/20 border border-brand-500/20;
+  }
+}
+
+/* ---- Recharts Overrides -------------------------------------------------- */
+.recharts-default-tooltip {
+  background: #1e293b !important;
+  border: 1px solid #334155 !important;
+  border-radius: 8px !important;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.4) !important;
+}
+
+.recharts-tooltip-label {
+  color: #f1f5f9 !important;
+  font-weight: 600 !important;
+}
+
+.recharts-tooltip-item {
+  color: #94a3b8 !important;
+}
+
+.recharts-cartesian-axis-tick-value {
+  fill: #64748b !important;
+  font-size: 11px !important;
+}
+
+.recharts-cartesian-grid-horizontal line,
+.recharts-cartesian-grid-vertical line {
+  stroke: #1e293b !important;
+}
+
+/* ---- Animations ---------------------------------------------------------- */
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    rgba(51, 65, 85, 0.4) 25%,
+    rgba(71, 85, 105, 0.6) 50%,
+    rgba(51, 65, 85, 0.4) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: 4px;
+}
+
+/* ---- Upload dropzone ----------------------------------------------------- */
+.dropzone {
+  @apply border-2 border-dashed border-slate-700 rounded-xl p-10 text-center
+         cursor-pointer transition-all duration-200
+         hover:border-brand-500/60 hover:bg-brand-500/5;
+}
+
+.dropzone-active {
+  @apply border-brand-500 bg-brand-500/10;
+}

@@ -1,0 +1,79 @@
+version: "3.9"
+
+# ---------------------------------------------------------------------------
+# Shared volumes
+# ---------------------------------------------------------------------------
+volumes:
+  models_volume:   # Pipeline artifacts (pipeline.joblib, metadata.json, etc.)
+  data_volume:     # Uploaded datasets
+
+# ---------------------------------------------------------------------------
+# Services
+# ---------------------------------------------------------------------------
+services:
+
+  # --------------------------------------------------------------------------
+  # 1. Trainer — one-shot container that trains and persists the ML model
+  # --------------------------------------------------------------------------
+  trainer:
+    build:
+      context: .
+      dockerfile: trainer/Dockerfile
+    volumes:
+      - models_volume:/models
+      - data_volume:/data
+    restart: "no"
+
+  # --------------------------------------------------------------------------
+  # 2. API — FastAPI serving inference and analytics endpoints
+  # --------------------------------------------------------------------------
+  api:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    ports:
+      - "8000:8000"
+    volumes:
+      - models_volume:/models
+      - data_volume:/data
+    depends_on:
+      trainer:
+        condition: service_completed_successfully
+    environment:
+      - PYTHONUNBUFFERED=1
+    healthcheck:
+      test: ["CMD", "python", "-c",
+             "import urllib.request; r = urllib.request.urlopen('http://localhost:8000/health'); import json; d = json.loads(r.read()); exit(0 if d.get('status') == 'ok' else 1)"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 15s
+    restart: on-failure
+
+  # --------------------------------------------------------------------------
+  # 3. Evaluator — waits for API health, runs test suite, writes metrics.json
+  # --------------------------------------------------------------------------
+  evaluator:
+    build:
+      context: .
+      dockerfile: evaluator/Dockerfile
+    volumes:
+      - models_volume:/models
+    depends_on:
+      api:
+        condition: service_healthy
+    restart: "no"
+
+  # --------------------------------------------------------------------------
+  # 4. Frontend — React + Vite app served via Nginx
+  # --------------------------------------------------------------------------
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+    ports:
+      - "80:80"
+    depends_on:
+      api:
+        condition: service_healthy
+    restart: on-failure
