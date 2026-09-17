@@ -4,7 +4,7 @@ import {
   User, Clock, Tv, BarChart3, ChevronDown, ChevronUp,
   ArrowRight, Lightbulb, AlertCircle, Loader2
 } from 'lucide-react'
-import { api, type AnalyzeResponse } from '@/api/client'
+import { api, formatErrorMessage, type AnalyzeResponse } from '@/api/client'
 import RecommendationCard from './RecommendationCard'
 
 const AVAILABLE_GENRES = [
@@ -52,7 +52,7 @@ export default function UserAnalysis() {
       })
       setResult(res)
     } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : 'Analysis failed')
+      setError(formatErrorMessage(e, 'Analysis failed'))
     } finally {
       setLoading(false)
     }

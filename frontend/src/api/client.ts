@@ -4,6 +4,47 @@
  * In production (Docker), Nginx proxies /api → api:8000.
  */
 
+export const BACKEND_UNAVAILABLE_MSG = 'Backend API unavailable'
+export const BACKEND_CONNECT_MSG = 'Connect a deployed AudienceIQ API to load live analytics.'
+
+export class ApiError extends Error {
+  status: number
+  isUnavailable: boolean
+
+  constructor(message: string, status: number = 0, isUnavailable: boolean = false) {
+    super(message)
+    this.name = 'ApiError'
+    this.status = status
+    this.isUnavailable = isUnavailable
+  }
+}
+
+export function isApiUnavailable(error: unknown): boolean {
+  if (!error) return false
+  if (error instanceof ApiError && error.isUnavailable) return true
+  const msg = error instanceof Error ? error.message : String(error)
+  return (
+    msg.includes('Backend API unavailable') ||
+    msg.includes('Unexpected token') ||
+    msg.includes('Failed to fetch') ||
+    msg.includes('NetworkError') ||
+    msg.includes('<!doctype') ||
+    msg.includes('is not valid JSON')
+  )
+}
+
+export function formatErrorMessage(error: unknown, fallback: string = 'An unexpected error occurred'): string {
+  if (!error) return fallback
+  if (isApiUnavailable(error)) {
+    return `${BACKEND_UNAVAILABLE_MSG}. ${BACKEND_CONNECT_MSG}`
+  }
+  const msg = error instanceof Error ? error.message : String(error)
+  if (msg.includes('Unexpected token') || msg.includes('<!doctype') || msg.includes('is not valid JSON')) {
+    return `${BACKEND_UNAVAILABLE_MSG}. ${BACKEND_CONNECT_MSG}`
+  }
+  return msg
+}
+
 const RAW_API_BASE = import.meta.env.VITE_API_URL || '/api'
 const API_BASE = RAW_API_BASE.replace(/\/+$/, '')
 
@@ -14,21 +55,50 @@ function getApiUrl(path: string): string {
 
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   const url = getApiUrl(path)
-  const res = await fetch(url, {
-    headers: { 'Content-Type': 'application/json', ...options.headers },
-    ...options,
-  })
+  let res: Response
+  try {
+    res = await fetch(url, {
+      headers: { 'Content-Type': 'application/json', ...options.headers },
+      ...options,
+    })
+  } catch {
+    throw new ApiError(
+      `${BACKEND_UNAVAILABLE_MSG}. ${BACKEND_CONNECT_MSG}`,
+      0,
+      true
+    )
+  }
+
+  // Ensure the response is JSON, not HTML (e.g. from Vercel/Nginx SPA fallback)
+  const contentType = res.headers.get('content-type') || ''
+  if (!contentType.toLowerCase().includes('application/json')) {
+    throw new ApiError(
+      `${BACKEND_UNAVAILABLE_MSG}. ${BACKEND_CONNECT_MSG}`,
+      res.status,
+      true
+    )
+  }
 
   if (!res.ok) {
     let detail = `HTTP ${res.status}`
     try {
       const err = await res.json()
-      detail = err.detail || JSON.stringify(err)
-    } catch {}
-    throw new Error(detail)
+      detail = err.detail || (typeof err === 'string' ? err : JSON.stringify(err))
+    } catch {
+      detail = `${BACKEND_UNAVAILABLE_MSG}. ${BACKEND_CONNECT_MSG}`
+    }
+    throw new ApiError(detail, res.status, false)
   }
 
-  return res.json() as Promise<T>
+  try {
+    return (await res.json()) as T
+  } catch {
+    throw new ApiError(
+      `${BACKEND_UNAVAILABLE_MSG}. ${BACKEND_CONNECT_MSG}`,
+      res.status,
+      true
+    )
+  }
 }
 
 // ---- Types ----------------------------------------------------------------
@@ -192,13 +262,46 @@ export const api = {
   uploadDataset: async (file: File): Promise<DatasetInspectionResponse> => {
     const form = new FormData()
     form.append('file', file)
-    const res = await fetch(getApiUrl('/upload'), { method: 'POST', body: form })
+    let res: Response
+    try {
+      res = await fetch(getApiUrl('/upload'), { method: 'POST', body: form })
+    } catch {
+      throw new ApiError(
+        `${BACKEND_UNAVAILABLE_MSG}. ${BACKEND_CONNECT_MSG}`,
+        0,
+        true
+      )
+    }
+
+    const contentType = res.headers.get('content-type') || ''
+    if (!contentType.toLowerCase().includes('application/json')) {
+      throw new ApiError(
+        `${BACKEND_UNAVAILABLE_MSG}. ${BACKEND_CONNECT_MSG}`,
+        res.status,
+        true
+      )
+    }
+
     if (!res.ok) {
       let detail = `HTTP ${res.status}`
-      try { const e = await res.json(); detail = e.detail || detail } catch {}
-      throw new Error(detail)
+      try {
+        const e = await res.json()
+        detail = e.detail || (typeof e === 'string' ? e : JSON.stringify(e))
+      } catch {
+        detail = `${BACKEND_UNAVAILABLE_MSG}. ${BACKEND_CONNECT_MSG}`
+      }
+      throw new ApiError(detail, res.status, false)
     }
-    return res.json()
+
+    try {
+      return (await res.json()) as DatasetInspectionResponse
+    } catch {
+      throw new ApiError(
+        `${BACKEND_UNAVAILABLE_MSG}. ${BACKEND_CONNECT_MSG}`,
+        res.status,
+        true
+      )
+    }
   },
 
   trainModel: () => request<TrainResponse>('/train', { method: 'POST' }),

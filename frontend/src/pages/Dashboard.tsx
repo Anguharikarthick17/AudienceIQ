@@ -1,12 +1,13 @@
 import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 import { Users, Tv, Clock, Target, BarChart3, Database } from 'lucide-react'
-import { api, type DashboardResponse } from '@/api/client'
+import { api, isApiUnavailable, formatErrorMessage, type DashboardResponse } from '@/api/client'
 import MetricCard from '@/components/dashboard/MetricCard'
 import SegmentChart from '@/components/dashboard/SegmentChart'
 import GenreChart from '@/components/dashboard/GenreChart'
 import QualityPanel from '@/components/dashboard/QualityPanel'
 import TopBar from '@/components/layout/TopBar'
+import ApiUnavailableState from '@/components/common/ApiUnavailableState'
 
 export default function Dashboard() {
   const [data, setData] = useState<DashboardResponse | null>(null)
@@ -16,7 +17,7 @@ export default function Dashboard() {
   useEffect(() => {
     api.getDashboard()
       .then(setData)
-      .catch(e => setError((e as Error).message))
+      .catch(e => setError(formatErrorMessage(e)))
       .finally(() => setLoading(false))
   }, [])
 
@@ -31,19 +32,26 @@ export default function Dashboard() {
     </>
   )
 
-  if (error || !data) return (
-    <>
-      <TopBar title="Dashboard" />
-      <div className="p-6">
-        <div className="card text-center py-16">
-          <Database className="w-10 h-10 text-slate-700 mx-auto mb-3" />
-          <p className="text-sm font-semibold text-slate-300">No data available yet</p>
-          <p className="text-xs text-slate-500 mt-1">{error}</p>
-          <p className="text-xs text-slate-600 mt-3">Upload a dataset and train the model to see analytics.</p>
+  if (error || !data) {
+    const isUnavailable = isApiUnavailable(error)
+    return (
+      <>
+        <TopBar title="Dashboard" />
+        <div className="p-6">
+          {isUnavailable ? (
+            <ApiUnavailableState />
+          ) : (
+            <div className="card text-center py-16">
+              <Database className="w-10 h-10 text-slate-700 mx-auto mb-3" />
+              <p className="text-sm font-semibold text-slate-300">No data available yet</p>
+              {error && <p className="text-xs text-slate-500 mt-1">{error}</p>}
+              <p className="text-xs text-slate-600 mt-3">Upload a dataset and train the model to see analytics.</p>
+            </div>
+          )}
         </div>
-      </div>
-    </>
-  )
+      </>
+    )
+  }
 
   return (
     <>

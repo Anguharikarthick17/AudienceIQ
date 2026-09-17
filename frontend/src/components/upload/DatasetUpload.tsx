@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import {
   Upload, FileText, CheckCircle, AlertCircle, Loader2, Database
 } from 'lucide-react'
-import { api, type DatasetInspectionResponse } from '@/api/client'
+import { api, formatErrorMessage, type DatasetInspectionResponse } from '@/api/client'
 import DatasetInspector from './DatasetInspector'
 
 export default function DatasetUpload() {
@@ -16,8 +16,8 @@ export default function DatasetUpload() {
   const inputRef = useRef<HTMLInputElement>(null)
 
   const handleFile = useCallback(async (file: File) => {
-    if (!file.name.toLowerCase().endsWith('.csv')) {
-      setError('Only CSV files are supported.')
+    if (!file.name.endsWith('.csv')) {
+      setError('Please upload a CSV file.')
       return
     }
     setError(null)
@@ -28,7 +28,7 @@ export default function DatasetUpload() {
       const res = await api.uploadDataset(file)
       setResult(res)
     } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : 'Upload failed')
+      setError(formatErrorMessage(e, 'Upload failed'))
     } finally {
       setUploading(false)
     }
@@ -53,7 +53,7 @@ export default function DatasetUpload() {
       const res = await api.trainModel()
       setTrainResult({ n_clusters: res.n_clusters, silhouette_score: res.silhouette_score, message: res.message })
     } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : 'Training failed')
+      setError(formatErrorMessage(e, 'Training failed'))
     } finally {
       setTraining(false)
     }

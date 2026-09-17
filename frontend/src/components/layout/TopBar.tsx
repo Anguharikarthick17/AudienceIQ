@@ -1,14 +1,20 @@
 import { useEffect, useState } from 'react'
-import { Activity, CheckCircle, XCircle, Clock } from 'lucide-react'
-import { api } from '@/api/client'
+import { Activity, Clock } from 'lucide-react'
+import { api, isApiUnavailable } from '@/api/client'
 
 export default function TopBar({ title }: { title: string }) {
-  const [modelLoaded, setModelLoaded] = useState<boolean | null>(null)
+  const [status, setStatus] = useState<'checking' | 'ready' | 'no_model' | 'offline'>('checking')
 
   useEffect(() => {
     api.health()
-      .then(h => setModelLoaded(h.model_loaded))
-      .catch(() => setModelLoaded(false))
+      .then(h => setStatus(h.model_loaded ? 'ready' : 'no_model'))
+      .catch(e => {
+        if (isApiUnavailable(e)) {
+          setStatus('offline')
+        } else {
+          setStatus('no_model')
+        }
+      })
   }, [])
 
   return (
@@ -17,23 +23,31 @@ export default function TopBar({ title }: { title: string }) {
       <h1 className="text-base font-semibold text-slate-100">{title}</h1>
 
       <div className="flex items-center gap-4">
-        {/* Model status pill */}
+        {/* Model / API status pill */}
         <div className="flex items-center gap-2 bg-slate-900 border border-slate-800
                         rounded-full px-3 py-1.5">
-          {modelLoaded === null ? (
+          {status === 'checking' && (
             <>
               <Clock className="w-3.5 h-3.5 text-slate-500 animate-spin" />
               <span className="text-xs text-slate-500">Checking…</span>
             </>
-          ) : modelLoaded ? (
+          )}
+          {status === 'ready' && (
             <>
               <span className="status-dot-green" />
               <span className="text-xs text-emerald-400 font-medium">Model Ready</span>
             </>
-          ) : (
+          )}
+          {status === 'no_model' && (
             <>
               <span className="status-dot-amber" />
               <span className="text-xs text-amber-400 font-medium">No Model</span>
+            </>
+          )}
+          {status === 'offline' && (
+            <>
+              <span className="w-2 h-2 rounded-full bg-slate-500" />
+              <span className="text-xs text-slate-400 font-medium">API Offline</span>
             </>
           )}
         </div>

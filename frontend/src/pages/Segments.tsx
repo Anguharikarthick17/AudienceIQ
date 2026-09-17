@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react'
 import { Users, AlertCircle } from 'lucide-react'
-import { api, type SegmentDetail } from '@/api/client'
+import { api, isApiUnavailable, formatErrorMessage, type SegmentDetail } from '@/api/client'
 import TopBar from '@/components/layout/TopBar'
 import SegmentExplorer from '@/components/segments/SegmentExplorer'
+import ApiUnavailableState from '@/components/common/ApiUnavailableState'
 
 export default function Segments() {
   const [segments, setSegments] = useState<SegmentDetail[]>([])
@@ -12,7 +13,7 @@ export default function Segments() {
   useEffect(() => {
     api.getSegments()
       .then(setSegments)
-      .catch(e => setError((e as Error).message))
+      .catch(e => setError(formatErrorMessage(e)))
       .finally(() => setLoading(false))
   }, [])
 
@@ -40,12 +41,16 @@ export default function Segments() {
         )}
 
         {error && (
-          <div className="card text-center py-16">
-            <AlertCircle className="w-8 h-8 text-amber-400 mx-auto mb-3" />
-            <p className="text-sm font-semibold text-slate-300">Model not trained yet</p>
-            <p className="text-xs text-slate-500 mt-1">{error}</p>
-            <p className="text-xs text-slate-600 mt-3">Upload a dataset and train the model first.</p>
-          </div>
+          isApiUnavailable(error) ? (
+            <ApiUnavailableState />
+          ) : (
+            <div className="card text-center py-16">
+              <AlertCircle className="w-8 h-8 text-amber-400 mx-auto mb-3" />
+              <p className="text-sm font-semibold text-slate-300">Model not trained yet</p>
+              <p className="text-xs text-slate-500 mt-1">{formatErrorMessage(error)}</p>
+              <p className="text-xs text-slate-600 mt-3">Upload a dataset and train the model first.</p>
+            </div>
+          )
         )}
 
         {!loading && !error && segments.length === 0 && (

@@ -7,7 +7,8 @@ import {
   CheckCircle, XCircle, HardDrive, Layers, BarChart3,
   Target, Users, Clock, FlaskConical
 } from 'lucide-react'
-import { api, type ModelInfoResponse } from '@/api/client'
+import { api, isApiUnavailable, formatErrorMessage, type ModelInfoResponse } from '@/api/client'
+import ApiUnavailableState from '@/components/common/ApiUnavailableState'
 
 export default function ModelEvidence() {
   const [info, setInfo] = useState<ModelInfoResponse | null>(null)
@@ -17,7 +18,7 @@ export default function ModelEvidence() {
   useEffect(() => {
     api.getModelInfo()
       .then(setInfo)
-      .catch(e => setError(e.message))
+      .catch(e => setError(formatErrorMessage(e)))
       .finally(() => setLoading(false))
   }, [])
 
@@ -29,12 +30,17 @@ export default function ModelEvidence() {
     </div>
   )
 
-  if (error || !info) return (
-    <div className="card text-center py-12 text-red-400">
-      <XCircle className="w-8 h-8 mx-auto mb-2" />
-      <p className="text-sm">{error || 'Could not load model info'}</p>
-    </div>
-  )
+  if (error || !info) {
+    if (isApiUnavailable(error)) {
+      return <ApiUnavailableState />
+    }
+    return (
+      <div className="card text-center py-12 text-slate-400">
+        <XCircle className="w-8 h-8 mx-auto mb-2 text-red-400" />
+        <p className="text-sm">{error || 'Could not load model info'}</p>
+      </div>
+    )
+  }
 
   const kData = info.k_evaluation?.map(e => ({
     k: `K=${e.k}`,
